@@ -18,25 +18,26 @@ concurrency:
 jobs:
   run-checker:
     runs-on: ubuntu-latest
+    environment: Test   # <-- IMPORTANT: matches the Environment that holds your SMTP/EMAIL secrets
+
+    # Job-level env so all steps see the same variables
+    env:
+      EPIC_LOCALE: ${{ secrets.EPIC_LOCALE || 'en-US' }}
+      EPIC_COUNTRY: ${{ secrets.EPIC_COUNTRY || 'US' }}
+      TIMEZONE: ${{ secrets.TIMEZONE || 'America/New_York' }}
+      STATE_FILE: state.json
+
+      # From your Environment secrets (under "Test")
+      EMAIL_TO_CSV: ${{ secrets.EMAIL_TO_CSV }}
+      SMTP_HOST: ${{ secrets.SMTP_HOST }}
+      SMTP_PORT: ${{ secrets.SMTP_PORT }}
+      SMTP_USER: ${{ secrets.SMTP_USER }}
+      SMTP_PASS: ${{ secrets.SMTP_PASS }}
+      EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-          cache: "pip"     # uses requirements.txt if present
-      # (setup-python docs)  :contentReference[oaicite:2]{index=2}
-
-      - name: Install deps
-        run: |
-          python -m pip install --upgrade pip
-          if [ -f requirements.txt ]; then
-            pip install -r requirements.txt
-          else
-            pip install requests
-          fi
 
       - name: Debug config (safe)
         run: |
@@ -47,20 +48,22 @@ jobs:
           echo "SMTP_PORT set?    [$([ -n "$SMTP_PORT" ] && echo yes || echo no)]"
           echo "EMAIL_FROM set?   [$([ -n "$EMAIL_FROM" ] && echo yes || echo no)]"
 
-      - name: Run checker
-        env:
-          EPIC_LOCALE: ${{ secrets.EPIC_LOCALE && secrets.EPIC_LOCALE || 'en-US' }}
-          EPIC_COUNTRY: ${{ secrets.EPIC_COUNTRY && secrets.EPIC_COUNTRY || 'US' }}
-          TIMEZONE: ${{ secrets.TIMEZONE && secrets.TIMEZONE || 'America/New_York' }}
-          STATE_FILE: "state.json"
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
 
-          # REQUIRED for sending:
-          EMAIL_TO_CSV: ${{ secrets.EMAIL_TO_CSV }}
-          SMTP_HOST: ${{ secrets.SMTP_HOST }}
-          SMTP_PORT: ${{ secrets.SMTP_PORT }}
-          SMTP_USER: ${{ secrets.SMTP_USER }}
-          SMTP_PASS: ${{ secrets.SMTP_PASS }}
-          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          else
+            pip install requests
+          fi
+
+      - name: Run checker
         run: |
           python script.py
 
