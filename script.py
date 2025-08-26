@@ -206,10 +206,15 @@ def fetch_free_now(tz: ZoneInfo):
 
 
 # --------------- Email rendering ------------------
-def render_email_html(items, tzname: str):
-    """Responsive 'Minimalist Dark Mode' HTML email with centered content."""
+def render_email_html(items, tzname: str, header_title: str | None = None):
+    """
+    Responsive 'Minimalist Dark Mode' HTML email with centered content.
+    header_title: if provided, used for the main header text (e.g., "Epic Free Games: Game1, Game2")
+    """
     tz = ZoneInfo(tzname)
-    preheader = "New 'FREE NOW' games detected. Grab them before the timer runs out."
+    titles = [g["title"] for g in items]
+    dynamic_title = header_title or (f"Epic Free Games: {', '.join(titles)}" if titles else "Epic Free Games")
+    preheader = f"New 'FREE NOW' games: {', '.join(titles)}" if titles else "No new 'FREE NOW' games right now."
 
     def fmt_local(iso_str: str) -> str:
         dt = datetime.fromisoformat(iso_str)
@@ -301,7 +306,7 @@ def render_email_html(items, tzname: str):
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
     <meta name="x-apple-disable-message-reformatting">
-    <title>Epic Games — Free Now</title>
+    <title>{html.escape(dynamic_title)}</title>
     <style>
       @media screen and (max-width: 600px) {{
         .container {{ width: 100% !important; }}
@@ -327,7 +332,7 @@ def render_email_html(items, tzname: str):
                   <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/31/Epic_Games_logo.svg/250px-Epic_Games_logo.svg.png" width="36" height="36" alt="Epic"
                        style="display:block; border:0; outline:none; text-decoration:none;"/>
                   <div style="font-family:Segoe UI, Roboto, Helvetica, Arial, sans-serif; font-weight:700; font-size:24px; line-height:30px; margin-top:8px; letter-spacing:0.2px; text-align:center;">
-                    Epic Games — Free Now
+                    {html.escape(dynamic_title)}
                   </div>
                   <div style="font-family:Segoe UI, Roboto, Helvetica, Arial, sans-serif; color:#a7b1c2; font-size:14px; line-height:22px; margin-top:6px; text-align:center;">
                     See the latest free Epic Games this week.
@@ -419,10 +424,15 @@ def main() -> int:
 
     # render & send only if there is something new
     if new_items:
-        html_body = render_email_html(new_items, TZNAME)
+        # Build subject/header like: "Epic Free Games: Game1, Game2"
+        titles = [it["title"] for it in new_items]
+        subject = f"Epic Free Games: {', '.join(titles)}"
+
+        html_body = render_email_html(new_items, TZNAME, header_title=subject)
+
         sent = False
         try:
-            sent = send_email("Epic Games — Free Now", html_body)
+            sent = send_email(subject, html_body)
         except Exception as e:
             print(f"Error sending email: {e}", file=sys.stderr)
             # We still mark success for the run itself if fetching succeeded,
