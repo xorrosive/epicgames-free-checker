@@ -1,0 +1,6 @@
+requests
+beautifulsoup4
+lxml
+python-dateutil
+pytz
+jinja2
