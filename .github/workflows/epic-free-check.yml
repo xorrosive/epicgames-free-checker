@@ -2,8 +2,18 @@ name: Epic Free Games Checker
 
 on:
   schedule:
-    - cron: "0 13 1-31/3 * *"   # every 3rd day at 13:00 UTC (adjust as you like)
-  workflow_dispatch:            # allow manual runs from the Actions tab
+    # Every 3rd day at 14:00 UTC (1,4,7,... of each month; resets monthly)
+    - cron: "0 14 1-31/3 * *"
+  workflow_dispatch: {}
+
+# Allow the workflow to push 'state.json' back to the repo
+permissions:
+  contents: write
+
+# Avoid overlapping runs if a previous one is still going
+concurrency:
+  group: epic-free-games
+  cancel-in-progress: true
 
 jobs:
   run-checker:
@@ -16,21 +26,44 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: "pip"     # uses requirements.txt if present
+      # (setup-python docs)  :contentReference[oaicite:2]{index=2}
 
       - name: Install deps
         run: |
           python -m pip install --upgrade pip
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          else
+            pip install requests
+          fi
 
       - name: Run checker
         env:
-          EPIC_LOCALE: "en-US"
-          EPIC_COUNTRY: "US"
-          TIMEZONE: "America/Toronto"
+          EPIC_LOCALE: ${{ secrets.EPIC_LOCALE || 'en-US' }}
+          EPIC_COUNTRY: ${{ secrets.EPIC_COUNTRY || 'US' }}
+          TIMEZONE: ${{ secrets.TIMEZONE || 'America/New_York' }}
+          STATE_FILE: "state.json"
           SMTP_HOST: ${{ secrets.SMTP_HOST }}
           SMTP_PORT: ${{ secrets.SMTP_PORT }}
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
           EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
         run: |
-          python your_script.py
+          python script.py
+
+      - name: Commit state.json if it changed
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if [ -f state.json ]; then
+            git add state.json
+            if ! git diff --cached --quiet; then
+              git commit -m "Update state.json [skip ci]"
+              git push
+            else
+              echo "No state changes."
+            fi
+          else
+            echo "No state.json to commit."
+          fi
