@@ -38,12 +38,24 @@ jobs:
             pip install requests
           fi
 
+      - name: Debug config (safe)
+        run: |
+          echo "TZ=$TIMEZONE LOCALE=$EPIC_LOCALE COUNTRY=$EPIC_COUNTRY"
+          echo "STATE_FILE=$STATE_FILE"
+          echo "EMAIL_TO_CSV set? [$([ -n "$EMAIL_TO_CSV" ] && echo yes || echo no)]"
+          echo "SMTP_HOST set?    [$([ -n "$SMTP_HOST" ] && echo yes || echo no)]"
+          echo "SMTP_PORT set?    [$([ -n "$SMTP_PORT" ] && echo yes || echo no)]"
+          echo "EMAIL_FROM set?   [$([ -n "$EMAIL_FROM" ] && echo yes || echo no)]"
+
       - name: Run checker
         env:
-          EPIC_LOCALE: ${{ secrets.EPIC_LOCALE || 'en-US' }}
-          EPIC_COUNTRY: ${{ secrets.EPIC_COUNTRY || 'US' }}
-          TIMEZONE: ${{ secrets.TIMEZONE || 'America/New_York' }}
+          EPIC_LOCALE: ${{ secrets.EPIC_LOCALE && secrets.EPIC_LOCALE || 'en-US' }}
+          EPIC_COUNTRY: ${{ secrets.EPIC_COUNTRY && secrets.EPIC_COUNTRY || 'US' }}
+          TIMEZONE: ${{ secrets.TIMEZONE && secrets.TIMEZONE || 'America/New_York' }}
           STATE_FILE: "state.json"
+
+          # REQUIRED for sending:
+          EMAIL_TO_CSV: ${{ secrets.EMAIL_TO_CSV }}
           SMTP_HOST: ${{ secrets.SMTP_HOST }}
           SMTP_PORT: ${{ secrets.SMTP_PORT }}
           SMTP_USER: ${{ secrets.SMTP_USER }}
