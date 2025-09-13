@@ -1,10 +1,13 @@
 {
-  "last_success_iso": "2025-09-10T14:19:35.186489+00:00",
+  "last_success_iso": "2025-09-13T14:15:29.743225+00:00",
   "notified": {
+    "Ghostrunner 2|2025-09-18T15:00:00+00:00": true,
     "Kamaeru|2025-08-28T15:00:00+00:00": true,
     "Machinarium|2025-09-04T15:00:00+00:00": true,
     "Make Way|2025-09-04T15:00:00+00:00": true,
+    "Monument Valley 2|2025-09-18T15:00:00+00:00": true,
     "Monument Valley|2025-09-11T15:00:00+00:00": true,
-    "Strange Horticulture|2025-08-28T15:00:00+00:00": true
+    "Strange Horticulture|2025-08-28T15:00:00+00:00": true,
+    "The Battle of Polytopia|2025-09-18T15:00:00+00:00": true
   }
 }
